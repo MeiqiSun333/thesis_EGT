@@ -1,5 +1,7 @@
 # thesis_EGT
 
+This repository contains the full code for my thesis on evolutionary games played on adaptive networks. The core model is built with Mesa and NetworkX, agents update strategies via logit-QRE and interact on graphs that can rewire over time. The codebase includes: (i) simulation modules (Game.py, GameAgent.py, GamesModel.py, and Simulate.py), (ii) utilities and default configurations (utils.py and config.py), (iii) local and HPC workflows for GSA and Pareto-front exploration (GSA folder and pareto folder), and (iv) analysis notebooks for the Experiments Section. All outputs are written as CSVs for reproducible plotting and statistical analysis.
+
 ## Game.py
 This module defines a Game class for a 2×2 game used in the thesis. Payoffs are parameterized by a pair (U, V) and can be optionally normalized relative to the grand mean. 
 Important funcitons:
@@ -41,9 +43,36 @@ Default parameters for the simulations, plus network presets and behavioral para
 ## utils.py
 Utility helpers to load the config, build parameter-stamped file paths and create folders, convert stringified lists in DataFrames.
 
-## run_simulations.ipynb
+## GSA
+This folder contains two scripts for running global sensitivity analysis locally in parallel.
 
+### run_gsa.py
+- runs a Morris method using SALib, executes many independent simulations in parallel.
+- Command-line arguments: --steps, --repetitions, --out_dir (default Data/GSA), --seed_params (design reproducibility), --seed_sim (simulation RNG base), --workers (0 = auto = CPU−1; 1 = sequential), and --overwrite. The parameter space covers seven inputs with the following bounds: rewiring_p (0.1–0.9), alpha (0–1), rat (0–2), risk (0–2), normalize (0–1), dependence (0–1), and dependence_game (0–1).
+- Example usage: python3 run_psa.py --repetitions 10 --steps 200
+
+### run_sobol_gsa.py
+- runs a Sobol method using SALib, executes many independent simulations in parallel.
+Command-line arguments: --steps, --repetitions, --out_dir (default sobol_GSA), --seed_params, --seed_sim, --n_base (base N for Saltelli), --workers (0 = auto; 1 = sequential), and --overwrite. It varies four inputs with bounds alpha (0–1), rat (0–2), normalize (0–1), and dependence_game (0–1), while holding rewiring_p=0.5, risk=1.0, and dependence=0.0 fixed.
+- Example usage: python3 run_sobol_gsa.py --repetitions 5 --steps 200 --n_base 256
+
+## pareto
+This folder contains the .py script used for the Pareto analysis, a SLURM submission .sh file to run it on HPC, and a Jupyter .ipynb notebook for analysis.
+
+### run_pareto.py
+HPC task script that explores a 7-dimensional parameter space with Latin Hypercube Sampling. Draws 1,024 samples each time over rewiring_p, alpha, rat, risk, normalizeGames, dependence, and dependence_game. Saves model_data_<params>_rep<rep>.csv if not already present.
+
+### run_pareto.sh
+SLURM submission script that runs the Python task as an array job, sets up the environment, copies sources to the node’s $TMPDIR, executes run_pareto.py for each SLURM_ARRAY_TASK_ID, and logs outputs. Also includes a cleanup-and-rescue function that automatically rsyncs any results from $TMPDIR back to the final results directory on exit.
+
+### Pareto_Front_Analysis.ipynb
+This notebook reads the raw model-level CSVs and concatenates them into a single DataFrame. It reports the minimized Gini Coefficient and maximized Total Social Utility. It then computes the non-dominated set (Pareto frontier) via a dominance check, labels frontier and dominated points, generates figures and small summary tables and writes them back for reuse.
+
+## run_simulations.ipynb
+A jupyter notebook that runs simulations for the thesis. It repeatedly calls Simulate.simulate(...) with different settings (network type: HK/ER/WS, rewiring probability, homophily alpha, risk aversion eta, rationality lambda, normalization on/off, dependence and dependence_game, mutation rate), and saves the resulting agent-level and model-level CSVs into labeled Data/... folders for later analysis.
 
 ## experiments.ipynb
+This is the primary experiment notebook, contains the code that produces the results in the Experiments section of the thesis. It loads simulation outputs, groups them by step and run, and builds key metrics such as the Gini coefficient, recent wealth, network statistics (e.g., clustering, path length, and risk/rationality assortativity) and properties (e.g., risk aversion, rationality, mutation, normalization). The notebook contains experiments to study how rewiring probability and homophily affect outcomes, examine network convergence across HK/WS/ER graphs, the influence of risk aversion, rationality, mutation, and normalization, draw the figure and analysis of two GSA methods. It analyzes wealth distributions using CCDF plots and simple power-law fits, applies basic statistical tests (e.g., t-tests/ANOVA) to quantify differences. The notebook also compares the default model with the null model. It also assembles the Pareto scatter used to describe the inequality–utility trade-off.
 
-
+## Closing summary
+In sum, this project provides a complete, reproducible pipeline: configure defaults (config.py, utils.py), run controlled simulations, scale up to large designs locally (run_gsa.py, run_gsa_sobol.py) or on HPC for Pareto studies (run_pareto.py with the SLURM .sh), and finalize the results in the main experiment and analysis notebooks (experiments.ipynb, run_simulations.ipynb). The repository is organized so that each stage can be executed independently, but all stages share a common data format to make comparison and figure generation straightforward. This structure is intended to support transparent methods, easy replication, and direct reuse of the simulations in the thesis.
