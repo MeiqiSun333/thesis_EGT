@@ -10,7 +10,7 @@ Important funcitons:
 - getQreChance(...) builds utilities and solves the logit QRE with scipy.optimize.root, returning each player’s equilibrium action probability.
 
 ## GameAgent.py
-This core module implements an adaptive Mesa agent that plays games on an adaptive network. Each agent holds its own game parameters (U, V), risk aversion, rationality, total wealth and recent wealth. At every step the agent selects a neighbor, draws actions from quantal-response probabilities returned by its Game, updates wealth and last utility, imitates the neighbor’s game (logistic switch based on prospect utilities), and mutates to a random game at rate μ/ N². It can also let the game drift within bounds (not included in the thesis). The network can rewire: the agent removes a safe edge that preserves connectivity and creates a new tie to a second-order or non-neighbor, with probabilities that depend on wealth distance. This module also include a mean-field function for implementing the null model. The class depends on networkx for the graph, mesa.Agent for scheduling, and the Game class for payoffs, utilities, and QRE strategy probabilities.
+This core module implements an adaptive Mesa agent that plays games on an adaptive network. Each agent holds its own game parameters (U, V), risk aversion, rationality, total wealth and recent wealth. At every step the agent selects a neighbor, draws actions from quantal-response probabilities returned by its Game, updates wealth and last utility, imitates the neighbor’s game (logistic switch based on prospect utilities), and mutates to a random game at rate M/N². It can also let the game drift within bounds (not included in the thesis). The network can rewire: the agent removes a safe edge that preserves connectivity and creates a new tie to a second-order or non-neighbor, with probabilities that depend on wealth distance. This module also include a mean-field function for implementing the null model. The class depends on networkx for the graph, mesa.Agent for scheduling, and the Game class for payoffs, utilities, and QRE strategy probabilities.
 Important functions:
 - get_rewiring_prob(neighbors, alpha, R, neighbor=False): computes normalized logistic scores for choosing which edge to drop or add, based on wealth differences.
 - rewire(alpha, beta, rewiring_p): with probability rewiring_p, removes one existing edge and creates a new edge to a second-order neighbor, otherwise to a random non-neighbor.
@@ -28,7 +28,7 @@ Important functions:
 This module implements full simulation runs. It returns two pandas DataFrames: model-level metrics and agent-level metrics. 
 Main arguments:
 - N, network, rewiring_p, alpha: population size, network type, rewiring probability, homophily intensity.
-- rat, risk, dependence, dependence_game, mutation_rate: system rationality level, system risk aversion level, payoff dependence, learning intensity, and mutation rate parameter M, changing the system mutation by the definition of M/N^2, while N is the population size.
+- rat, risk, dependence, dependence_game, mutation_rate: system rationality level, system risk aversion level, payoff dependence, learning intensity, and mutation rate parameter M, changing the system mutation by the definition of M/N², while N is the population size.
 - steps: how many steps per run.
 - normalizeGames: range from 0 to 1, representing the normalization intensity, 0 for non-normalize and 1 for normalize. Also can be set as True or False.
 - null_model: pair agents randomly without network dynamics.
